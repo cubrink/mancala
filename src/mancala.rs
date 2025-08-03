@@ -22,6 +22,7 @@ pub struct State {
 
 impl State {
     const MAX: usize = 8;
+    const MIN: usize = 0;
 
     pub fn new() -> Self {
         let current_player = 0;
@@ -50,9 +51,10 @@ impl State {
             .iter()
             .enumerate()
             .filter_map(|(i, stones)| {
-                match stones {
-                    0 | State::MAX => None,
-                    _ => Some(i as Action),
+                if (i == State::MIN || i == (State::MAX - 1)) {
+                    None
+                } else {
+                    Some(i as Action)
                 }
             })
             .collect()
@@ -61,8 +63,6 @@ impl State {
     pub fn act(&self, action: Action) -> State {
         let mut state = self.clone();
         let stones: Stones = state.pop(action);
-
-        
 
         for i in 1..=stones {
             let (_a, _b) = divmod(i.into(), 13);
