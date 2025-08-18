@@ -13,8 +13,4 @@ pub enum MancalaError {
     /// The pit is not a playable pit
     #[error("The pit {0} is not a playable pit")]
     NotPlayerPit(usize),
-
-    /// The player number is invalid
-    #[error("Player {0} is invalid, must be either 0 or 1")]
-    InvalidPlayer(usize),
 }

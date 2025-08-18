@@ -8,7 +8,7 @@ const N: usize = ROWS * PITS;
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Mancala {
     board: [usize; N],
-    player: usize,
+    player: bool,
 }
 
 impl Mancala {
@@ -29,11 +29,8 @@ impl Mancala {
         Some(1),
     ];
 
-    fn new(board: [usize; N], player: usize) -> Result<Self, MancalaError> {
-        if player > 1 {
-            Err(MancalaError::InvalidPlayer(player))?;
-        }
-        Ok(Self { board, player })
+    fn new(board: [usize; N], player: bool) -> Self {
+        Self { board, player }
     }
 
     fn check_bounds(pit: usize) -> Result<(), <Self as GameState>::Error> {
@@ -46,9 +43,12 @@ impl Mancala {
 
 impl GameState for Mancala {
     type Error = MancalaError;
+    type Player = bool;
+    type Board = [usize; N];
 
-    fn act(&self, _pit: usize) -> Result<Self, Self::Error> {
-        todo!();
+    fn act(&self, pit: usize) -> Result<Self, Self::Error> {
+        let mut game = self.clone();
+        game.mut_act(pit)
     }
 
     fn mut_act(&mut self, _pit: usize) -> Result<Self, Self::Error> {
@@ -59,7 +59,7 @@ impl GameState for Mancala {
         todo!();
     }
 
-    fn get_player(&self) -> usize {
+    fn get_player(&self) -> bool {
         self.player
     }
 
@@ -68,23 +68,42 @@ impl GameState for Mancala {
     }
 
     fn is_completed(&self) -> bool {
-        todo!();
+        for idx in 0..Self::N {
+            if idx == 0 || idx == PITS {
+                continue;
+            }
+            if self.board[idx] > 0 {
+                return false;
+            }
+        }
+        true
     }
 
-    fn get_winner(&self) -> Result<usize, Self::Error> {
-        todo!();
+    fn get_winner(&self) -> Result<Self::Player, Self::Error> {
+        if !self.is_completed() {
+            Err(MancalaError::GameNotEnded)?;
+        }
+        Ok(self.board[PITS] > self.board[0])
     }
 
-    fn at(&self, _pit: usize) -> Result<Self, Self::Error> {
-        todo!();
+    fn at(&self, pit: usize) -> Result<usize, Self::Error> {
+        Self::check_bounds(pit)?;
+        Ok(self.board[pit])
     }
 
-    fn pop(&self, _pit: usize) -> Result<(usize, Self), Self::Error> {
-        todo!();
+    fn pop(&self, pit: usize) -> Result<(usize, Self), Self::Error> {
+        let mut game = self.clone();
+        game.mut_pop(pit)
     }
 
-    fn mut_pop(&self, _pit: usize) -> Result<(usize, Self), Self::Error> {
-        todo!();
+    fn mut_pop(&mut self, pit: usize) -> Result<(usize, Self), Self::Error> {
+        Self::check_bounds(pit)?;
+        if pit == 0 || pit == PITS {
+            Err(MancalaError::NotPlayerPit(pit))?;
+        }
+        let stones = self.board[pit];
+        self.board[pit] = 0;
+        Ok((stones, *self))
     }
 
     fn is_scoring_pit(&self, pit: usize) -> Result<bool, Self::Error> {
@@ -114,20 +133,22 @@ impl std::fmt::Display for Mancala {
 impl std::default::Default for Mancala {
     fn default() -> Self {
         let board: [usize; N] = [0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4];
-        let player: usize = 0;
+        let player: bool = false;
         Self { board, player }
     }
 }
 
 impl std::convert::From<[usize; N]> for Mancala {
-    fn from(_value: [usize; N]) -> Self {
-        todo!();
+    fn from(board: [usize; N]) -> Self {
+        let player: bool = false;
+        Self { board, player }
     }
 }
 
-impl std::convert::From<(usize, [usize; N])> for Mancala {
-    fn from(_value: (usize, [usize; N])) -> Self {
-        todo!();
+impl std::convert::From<([usize; N], bool)> for Mancala {
+    fn from(value: ([usize; N], bool)) -> Self {
+        let (board, player) = value;
+        Self { board, player }
     }
 }
 
@@ -204,29 +225,74 @@ mod test {
     #[test]
     fn test_new_ok() {
         let board: [usize; N] = [0; N];
-        let player = 0;
+        let player: bool = false;
         let game = Mancala::new(board, player);
-        assert!(game.is_ok());
-        let game = game.unwrap();
         assert_eq!(&board, game.get_board());
         assert_eq!(player, game.get_player());
     }
 
     #[test]
-    fn test_new_wrong_player_fails() {
-        let board: [usize; N] = [0; N];
-        let player = 2;
-        let game = Mancala::new(board, player);
-        assert!(game.is_err());
-        assert_eq!(game.unwrap_err(), MancalaError::InvalidPlayer(player));
-    }
-
-    #[test]
     fn test_default_ok() {
         let board: [usize; N] = [0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4];
-        let player: usize = 0;
+        let player: bool = false;
         let gt = Mancala { board, player };
         let default = Mancala::default();
         assert_eq!(default, gt);
+    }
+
+    #[test]
+    fn test_from_array_ok() {
+        let board: [usize; N] = [5, 1, 2, 2, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4];
+        let player: bool = false;
+        let gt = Mancala { board, player };
+        let game = Mancala::from(board);
+        assert_eq!(game, gt);
+    }
+
+    #[test]
+    fn test_from_tuple_ok() {
+        let board: [usize; N] = [5, 1, 2, 2, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4];
+        let player: bool = true;
+        let gt = Mancala { board, player };
+        let game = Mancala::from((board, player));
+        assert_eq!(game, gt);
+    }
+
+    #[test]
+    fn test_is_completed_true_ok() {
+        let board: [usize; N] = [24, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0];
+        let game = Mancala::from(board);
+        let gt: bool = true;
+        assert_eq!(game.is_completed(), gt);
+    }
+
+    #[test]
+    fn test_is_completed_false_ok() {
+        let board: [usize; N] = [5, 1, 2, 2, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4];
+        let game = Mancala::from(board);
+        let gt: bool = false;
+        assert_eq!(game.is_completed(), gt);
+    }
+
+    #[test]
+    fn test_mut_pop_ok() {
+        let mut game = Mancala::default();
+        let (stones, game) = game.mut_pop(1).unwrap();
+        assert_eq!(stones, 4);
+        assert_eq!(game.at(1).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_mut_pop_oob_fails() {
+        let mut game = Mancala::default();
+        let error = game.mut_pop(Mancala::N).unwrap_err();
+        assert_eq!(error, MancalaError::PitOutOfBounds(Mancala::N));
+    }
+
+    #[test]
+    fn test_mut_pop_scoring_pit_fails() {
+        let mut game = Mancala::default();
+        let error = game.mut_pop(0).unwrap_err();
+        assert_eq!(error, MancalaError::NotPlayerPit(0));
     }
 }

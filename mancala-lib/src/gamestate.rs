@@ -4,13 +4,16 @@ pub const N: usize = PITS * ROWS;
 
 pub trait GameState
 where
-    Self: From<[usize; N]>,
-    Self: From<(usize, [usize; N])>,
+    Self: From<Self::Board>,
+    Self: From<(Self::Board, Self::Player)>,
     Self: std::fmt::Display,
     Self: std::default::Default,
     Self: Clone,
 {
     type Error: std::error::Error;
+    type Player;
+    type Board;
+
     const PITS: usize = PITS;
     const ROWS: usize = ROWS;
     const N: usize = N;
@@ -39,21 +42,21 @@ where
     fn get_actions(&self) -> Vec<usize>;
 
     /// Returns the current player in the game.
-    fn get_player(&self) -> usize;
+    fn get_player(&self) -> Self::Player;
 
     /// Returns a view of the current board.
-    fn get_board(&self) -> &[usize; N];
+    fn get_board(&self) -> &Self::Board;
 
     /// Returns if a game is completed.
     fn is_completed(&self) -> bool;
 
     /// Returns the player who won.
-    fn get_winner(&self) -> Result<usize, Self::Error>;
+    fn get_winner(&self) -> Result<Self::Player, Self::Error>;
 
     /// Returns the number of stones at a certain pit.
     ///
     /// * `pit` - Pit to look at
-    fn at(&self, pit: usize) -> Result<Self, Self::Error>;
+    fn at(&self, pit: usize) -> Result<usize, Self::Error>;
 
     /// Removes the number of stones at a certain pit
     ///
@@ -69,7 +72,7 @@ where
     /// Otherwise, returns an error
     ///
     /// * `pit` - Pit to remove stones from
-    fn mut_pop(&self, pit: usize) -> Result<(usize, Self), Self::Error>;
+    fn mut_pop(&mut self, pit: usize) -> Result<(usize, Self), Self::Error>;
 
     /// Returns if a pit is a scoring pit.
     ///
