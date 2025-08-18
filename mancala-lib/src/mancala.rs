@@ -56,7 +56,17 @@ impl GameState for Mancala {
     }
 
     fn get_actions(&self) -> Vec<usize> {
-        todo!();
+        let player: usize = self.player as usize;
+        let start: usize = 1 + PITS * player;
+        let end: usize = PITS * (1 + player);
+        self.board[start..end]
+            .iter()
+            .enumerate()
+            .flat_map(|(idx, stones)| match stones {
+                0 => None,
+                _ => Some(idx + start),
+            })
+            .collect()
     }
 
     fn get_player(&self) -> bool {
@@ -294,5 +304,25 @@ mod test {
         let mut game = Mancala::default();
         let error = game.mut_pop(0).unwrap_err();
         assert_eq!(error, MancalaError::NotPlayerPit(0));
+    }
+
+    #[test]
+    fn test_get_actions_player_1() {
+        let board: [usize; N] = [0, 1, 2, 3, 0, 0, 0, 7, 0, 4, 0, 5, 0, 6];
+        let player: bool = false;
+        let game = Mancala::from((board, player));
+        let gt: Vec<usize> = vec![1, 2, 3];
+        let actions = game.get_actions();
+        assert_eq!(actions, gt);
+    }
+
+    #[test]
+    fn test_get_actions_player_2() {
+        let board: [usize; N] = [0, 1, 2, 3, 0, 0, 0, 7, 0, 4, 0, 5, 0, 6];
+        let player: bool = true;
+        let game = Mancala::from((board, player));
+        let gt: Vec<usize> = vec![9, 11, 13];
+        let actions = game.get_actions();
+        assert_eq!(actions, gt);
     }
 }
