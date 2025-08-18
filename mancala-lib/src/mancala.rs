@@ -157,7 +157,7 @@ impl std::fmt::Display for Mancala {
                 self.board[9],
                 self.board[8],
             ),
-            format!("{}| |", border),
+            format!("{border}| |"),
             " \\_____________________\\\\_____________________\\|".to_string(),
         ]
         .join("\n");
