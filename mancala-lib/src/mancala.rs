@@ -29,10 +29,6 @@ impl Mancala {
         Some(1),
     ];
 
-    fn new(board: [usize; N], player: bool) -> Self {
-        Self { board, player }
-    }
-
     fn check_bounds(pit: usize) -> Result<(), <Self as GameState>::Error> {
         if pit >= Self::N {
             Err(MancalaError::PitOutOfBounds(pit))?
@@ -230,15 +226,6 @@ mod test {
         assert!(opposite.is_ok(), "Player pits should have opposites");
         let opposite = opposite.unwrap();
         assert_eq!(opposite, gt);
-    }
-
-    #[test]
-    fn test_new_ok() {
-        let board: [usize; N] = [0; N];
-        let player: bool = false;
-        let game = Mancala::new(board, player);
-        assert_eq!(&board, game.get_board());
-        assert_eq!(player, game.get_player());
     }
 
     #[test]
