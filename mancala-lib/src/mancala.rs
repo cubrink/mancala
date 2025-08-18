@@ -43,7 +43,7 @@ impl GameState for Mancala {
     type Board = [usize; N];
 
     fn act(&self, pit: usize) -> Result<Self, Self::Error> {
-        let mut game = self.clone();
+        let mut game = *self;
         game.mut_act(pit)
     }
 
@@ -98,7 +98,7 @@ impl GameState for Mancala {
     }
 
     fn pop(&self, pit: usize) -> Result<(usize, Self), Self::Error> {
-        let mut game = self.clone();
+        let mut game = *self;
         game.mut_pop(pit)
     }
 
@@ -133,16 +133,16 @@ impl GameState for Mancala {
 impl std::fmt::Display for Mancala {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let border = "_____________________________________________";
-        let output = vec![
+        let output = [
             border.to_string(),
             format!(
                 "|      | {0:2} | {1:2} | {2:2} || {3:2} | {4:2} | {5:2} |      |\\",
-                self.board[1].to_string(),
-                self.board[2].to_string(),
-                self.board[3].to_string(),
-                self.board[4].to_string(),
-                self.board[5].to_string(),
-                self.board[6].to_string(),
+                self.board[1],
+                self.board[2],
+                self.board[3],
+                self.board[4],
+                self.board[5],
+                self.board[6],
             ),
             format!(
                 "|  {0:2}  |--------------||--------------|  {1:>2}  | |",
@@ -150,19 +150,19 @@ impl std::fmt::Display for Mancala {
             ),
             format!(
                 "|      | {0:2} | {1:2} | {2:2} || {3:2} | {4:2} | {5:2} |      | |",
-                self.board[13].to_string(),
-                self.board[12].to_string(),
-                self.board[11].to_string(),
-                self.board[10].to_string(),
-                self.board[9].to_string(),
-                self.board[8].to_string(),
+                self.board[13],
+                self.board[12],
+                self.board[11],
+                self.board[10],
+                self.board[9],
+                self.board[8],
             ),
             format!("{}| |", border),
             " \\_____________________\\\\_____________________\\|".to_string(),
         ]
         .join("\n");
 
-        write!(f, "{}", output)
+        write!(f, "{output}")
     }
 }
 
