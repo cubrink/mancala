@@ -1,6 +1,6 @@
-const PITS: usize = 7;
-const ROWS: usize = 2;
-const N: usize = ROWS * PITS;
+pub const PITS: usize = 7;
+pub const ROWS: usize = 2;
+pub const N: usize = PITS * ROWS;
 
 pub trait GameState
 where
@@ -11,6 +11,9 @@ where
     Self: Clone,
 {
     type Error: std::error::Error;
+    const PITS: usize = PITS;
+    const ROWS: usize = ROWS;
+    const N: usize = N;
 
     /// Performs an action on the game state.
     ///
@@ -39,7 +42,7 @@ where
     fn get_player(&self) -> usize;
 
     /// Returns a view of the current board.
-    fn get_board(&self) -> usize;
+    fn get_board(&self) -> &[usize; N];
 
     /// Returns if a game is completed.
     fn is_completed(&self) -> bool;
@@ -81,5 +84,5 @@ where
     /// an error is raised
     ///
     /// * `pit` - Pit to get opposite pit of
-    fn get_opposite_pit(&self, pit: usize) -> Result<bool, Self::Error>;
+    fn get_opposite_pit(pit: usize) -> Result<usize, Self::Error>;
 }
