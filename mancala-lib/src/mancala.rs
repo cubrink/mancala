@@ -131,8 +131,38 @@ impl GameState for Mancala {
 }
 
 impl std::fmt::Display for Mancala {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let border = "_____________________________________________";
+        let output = vec![
+            border.to_string(),
+            format!(
+                "|      | {0:2} | {1:2} | {2:2} || {3:2} | {4:2} | {5:2} |      |\\",
+                self.board[1].to_string(),
+                self.board[2].to_string(),
+                self.board[3].to_string(),
+                self.board[4].to_string(),
+                self.board[5].to_string(),
+                self.board[6].to_string(),
+            ),
+            format!(
+                "|  {0:2}  |--------------||--------------|  {1:>2}  | |",
+                self.board[0], self.board[7],
+            ),
+            format!(
+                "|      | {0:2} | {1:2} | {2:2} || {3:2} | {4:2} | {5:2} |      | |",
+                self.board[13].to_string(),
+                self.board[12].to_string(),
+                self.board[11].to_string(),
+                self.board[10].to_string(),
+                self.board[9].to_string(),
+                self.board[8].to_string(),
+            ),
+            format!("{}| |", border),
+            " \\_____________________\\\\_____________________\\|".to_string(),
+        ]
+        .join("\n");
+
+        write!(f, "{}", output)
     }
 }
 
@@ -311,5 +341,16 @@ mod test {
         let gt: Vec<usize> = vec![9, 11, 13];
         let actions = game.get_actions();
         assert_eq!(actions, gt);
+    }
+
+    #[test]
+    fn test_to_string_ok() {
+        let mut game = Mancala::default();
+        game.board[0] = 10;
+        game.board[1] = 20;
+        game.board[9] = 55;
+        let output: String = game.to_string();
+        println!();
+        println!("{}", output);
     }
 }
