@@ -72,7 +72,7 @@ where
     /// Otherwise, returns an error
     ///
     /// * `pit` - Pit to remove stones from
-    fn mut_pop(&mut self, pit: usize) -> Result<(usize, Self), Self::Error>;
+    fn mut_pop(&mut self, pit: usize) -> Result<usize, Self::Error>;
 
     /// Returns if a pit is a scoring pit.
     ///

@@ -11,6 +11,12 @@ struct Mancala {
     player: bool,
 }
 
+struct MoveData {
+    pub start: usize,
+    pub end: usize,
+    pub scorepit: usize,
+}
+
 impl Mancala {
     const _ADJACENT_TABLE: [Option<usize>; Self::N] = [
         None,
@@ -35,6 +41,27 @@ impl Mancala {
         }
         Ok(())
     }
+
+    /// Returns an iterator of each index that gets visited when moving
+    /// a pile of stones.
+    ///
+    /// * `start` - The location to start walking from
+    /// * `steps` - How many steps to take
+    fn walk(start: usize, steps: usize) -> Vec<usize> {
+        let mut visited = Vec::<usize>::new();
+        let player = start / Self::PITS;
+        let skip = player * Self::PITS;
+
+        let mut offset: usize = 0;
+        for s in 1..=steps {
+            if (start + s + offset) % Self::N == skip {
+                offset += 1;
+            }
+            let idx = (start + s + offset) % Self::N;
+            visited.push(idx);
+        }
+        visited
+    }
 }
 
 impl GameState for Mancala {
@@ -47,8 +74,67 @@ impl GameState for Mancala {
         game.mut_act(pit)
     }
 
-    fn mut_act(&mut self, _pit: usize) -> Result<Self, Self::Error> {
-        todo!();
+    fn mut_act(&mut self, pit: usize) -> Result<Self, Self::Error> {
+        // Pre-compute useful quantities
+        let stones = self.mut_pop(pit)?;
+        let player: usize = self.player as usize;
+        let a = MoveData {
+            start: 1,
+            end: Self::PITS - 1,
+            scorepit: Self::PITS,
+        };
+        let b = MoveData {
+            start: Self::PITS + 1,
+            end: Self::N - 1,
+            scorepit: 0,
+        };
+        let (a, b) = match self.player {
+            false => (a, b),
+            true => (b, a),
+        };
+
+        // General game loop
+        let mut offset: usize = 0;
+        for s in 1..=stones {
+            if (pit + s + offset) % Self::N == b.scorepit {
+                // The stone currently would drop into the opponent's scoring pit
+                // Add an offset to skip past this
+                offset += 1;
+            }
+            let idx = (pit + s + offset) % Self::N;
+            self.board[idx] += 1;
+        }
+        let final_idx = (pit + stones + offset) % Self::N;
+
+        // Handle special rules
+        // 1. Capture player pit if landed in your own empty pit
+        if self.board[final_idx] == 1 {
+            match Self::_ADJACENT_TABLE[final_idx] {
+                None => (),
+                Some(opposite) => match self.board[opposite] {
+                    0 => {}
+                    x => {
+                        let scorepit = (player * Self::PITS + Self::PITS) % Self::N;
+                        self.board[opposite] = 0;
+                        self.board[final_idx] = 0;
+                        self.board[scorepit] += x + 1;
+                    }
+                },
+            };
+        }
+        // 2. Finish game if player has no moves left
+        let start = player * Self::PITS + 1;
+        let end = start + Self::PITS;
+        // if self.board[start..end].iter().sum() == 0 {
+        //     let opp_start = (start + Self::PITS) % Self::N;
+        //     let opp_end = (end + Self::PITS) % Self::N;
+        //     todo!()
+        // }
+        // 3. Go again if landed in the scoring pit
+        if !self.is_scoring_pit(final_idx)? {
+            self.player = !self.player;
+        }
+        Ok(*self)
     }
 
     fn get_actions(&self) -> Vec<usize> {
@@ -99,17 +185,18 @@ impl GameState for Mancala {
 
     fn pop(&self, pit: usize) -> Result<(usize, Self), Self::Error> {
         let mut game = *self;
-        game.mut_pop(pit)
+        let stones = game.mut_pop(pit)?;
+        Ok((stones, game))
     }
 
-    fn mut_pop(&mut self, pit: usize) -> Result<(usize, Self), Self::Error> {
+    fn mut_pop(&mut self, pit: usize) -> Result<usize, Self::Error> {
         Self::check_bounds(pit)?;
         if pit == 0 || pit == PITS {
             Err(MancalaError::NotPlayerPit(pit))?;
         }
         let stones = self.board[pit];
         self.board[pit] = 0;
-        Ok((stones, *self))
+        Ok(stones)
     }
 
     fn is_scoring_pit(&self, pit: usize) -> Result<bool, Self::Error> {
@@ -304,7 +391,7 @@ mod test {
     #[test]
     fn test_mut_pop_ok() {
         let mut game = Mancala::default();
-        let (stones, game) = game.mut_pop(1).unwrap();
+        let stones = game.mut_pop(1).unwrap();
         assert_eq!(stones, 4);
         assert_eq!(game.at(1).unwrap(), 0);
     }
@@ -353,4 +440,96 @@ mod test {
         println!();
         println!("{}", output);
     }
+
+    #[test]
+    fn test_walk_simple_ok() {
+        let visited = Mancala::walk(1, 4);
+        let gt = vec![2, 3, 4, 5];
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_walk_scorepit_ok() {
+        let visited = Mancala::walk(5, 5);
+        let gt = vec![6, 7, 8, 9, 10];
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_walk_p2_scorepit_ok() {
+        let visited = Mancala::walk(12, 5);
+        let gt = vec![13, 0, 1, 2, 3];
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_walk_skip_p2_scorepit_ok() {
+        let visited = Mancala::walk(6, 8);
+        let gt = vec![7, 8, 9, 10, 11, 12, 13, 1];
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_walk_skip_p1_scorepit_ok() {
+        let visited = Mancala::walk(13, 8);
+        let gt = vec![0, 1, 2, 3, 4, 5, 6, 8];
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_move_simple_ok() {
+        let mut game = Mancala::from([0; N]);
+        let gt = Mancala::from(([0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], true));
+        game.board[1] = 4;
+        game = game.mut_act(1).unwrap();
+        assert_eq!(game, gt);
+    }
+
+    #[test]
+    fn test_move_one_wrap_ok() {
+        let mut game = Mancala::from([0; N]);
+        let gt = Mancala::from(([0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], true));
+        game.board[1] = 13;
+        game = game.mut_act(1).unwrap();
+        assert_eq!(game, gt);
+    }
+
+    #[test]
+    fn test_move_two_wrap_ok() {
+        let mut game = Mancala::from([0; N]);
+        let gt = Mancala::from(([100, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], true));
+        game.board[0] = 100;
+        game.board[1] = 26;
+        game = game.mut_act(1).unwrap();
+        assert_eq!(game, gt);
+    }
+
+    #[test]
+    fn test_capture_player_one_ok() {
+        let mut game = Mancala::from((
+            [
+                0, /**/ 1, 0, 0, 0, 0, 1, /**/ 2, /**/
+                0, 0, 0, 0, 1, 1,
+            ],
+            false,
+        ));
+        let gt = Mancala::from((
+            [
+                0, /**/ 0, 0, 0, 0, 0, 1, /**/ 2, /**/
+                0, 0, 0, 0, 0, 1,
+            ],
+            true,
+        ));
+        game = game.mut_act(1).unwrap();
+        assert_eq!(game, gt);
+    }
+
+    // Test that
+    // Happy path:
+    // Capture mechanic works for both players
+    //
+    // Fail cases:
+    // Move only own pieces
+    // Can't move score pits
+    //
 }
