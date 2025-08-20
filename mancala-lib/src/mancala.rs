@@ -5,15 +5,29 @@ const PITS: usize = 7;
 const ROWS: usize = 2;
 const N: usize = ROWS * PITS;
 
+/// Holds data to represent a game of mancala
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Mancala {
+    /// The mancala board represented as a flat array.
+    ///
+    /// Indices 0 and 7 (N/2), represent the scoring pits
+    /// At index 0 is the scoring pit of player 1
+    /// At index 7 is the scoring pit of player 2
     board: [usize; N],
+
+    /// A flag to keep track of whose turn it is in the game
     player: bool,
 }
 
+/// Holds data about what regions the player can make moves for.
 struct MoveData {
+    /// The index of the first non-scoring pit for a player.
     pub start: usize,
+
+    /// The index of the last non-scoring pit for a player (inclusive)
     pub end: usize,
+
+    /// The index of the player's scoring pit
     pub scorepit: usize,
 }
 
@@ -94,17 +108,12 @@ impl GameState for Mancala {
         };
 
         // General game loop
-        let mut offset: usize = 0;
-        for s in 1..=stones {
-            if (pit + s + offset) % Self::N == b.scorepit {
-                // The stone currently would drop into the opponent's scoring pit
-                // Add an offset to skip past this
-                offset += 1;
-            }
-            let idx = (pit + s + offset) % Self::N;
-            self.board[idx] += 1;
-        }
-        let final_idx = (pit + stones + offset) % Self::N;
+        let visited = Self::walk(pit, stones);
+        visited.iter().for_each(|idx| self.board[*idx] += 1);
+        let final_idx = match visited.iter().last() {
+            Some(final_idx) => Ok(final_idx.clone()),
+            None => Err(MancalaError::NotPlayablePit(pit)),
+        }?;
 
         // Handle special rules
         // 1. Capture player pit if landed in your own empty pit
@@ -114,24 +123,20 @@ impl GameState for Mancala {
                 Some(opposite) => match self.board[opposite] {
                     0 => {}
                     x => {
-                        let scorepit = (player * Self::PITS + Self::PITS) % Self::N;
                         self.board[opposite] = 0;
                         self.board[final_idx] = 0;
-                        self.board[scorepit] += x + 1;
+                        self.board[a.scorepit] += x + 1;
                     }
                 },
             };
         }
         // 2. Finish game if player has no moves left
-        let start = player * Self::PITS + 1;
-        let end = start + Self::PITS;
-        // if self.board[start..end].iter().sum() == 0 {
-        //     let opp_start = (start + Self::PITS) % Self::N;
-        //     let opp_end = (end + Self::PITS) % Self::N;
-        //     todo!()
-        // }
+        if self.board[a.start..=a.end].iter().sum::<usize>() == 0 {
+            self.board[b.scorepit] += self.board[b.start..=b.end].iter().sum::<usize>();
+            self.board[b.start..=b.end].fill(0);
+        }
         // 3. Go again if landed in the scoring pit
-        if !self.is_scoring_pit(final_idx)? {
+        if final_idx != a.scorepit {
             self.player = !self.player;
         }
         Ok(*self)
@@ -192,7 +197,7 @@ impl GameState for Mancala {
     fn mut_pop(&mut self, pit: usize) -> Result<usize, Self::Error> {
         Self::check_bounds(pit)?;
         if pit == 0 || pit == PITS {
-            Err(MancalaError::NotPlayerPit(pit))?;
+            Err(MancalaError::NotPlayablePit(pit))?;
         }
         let stones = self.board[pit];
         self.board[pit] = 0;
@@ -212,7 +217,7 @@ impl GameState for Mancala {
         Self::check_bounds(pit)?;
         match Self::_ADJACENT_TABLE[pit] {
             Some(p) => Ok(p),
-            None => Err(MancalaError::NotPlayerPit(pit)),
+            None => Err(MancalaError::NotPlayablePit(pit)),
         }
     }
 }
@@ -322,7 +327,7 @@ mod test {
         let opposite = Mancala::get_opposite_pit(pit);
         assert!(opposite.is_err(), "Scoring pits should not have opposites");
         let error = opposite.unwrap_err();
-        assert_eq!(error, MancalaError::NotPlayerPit(pit));
+        assert_eq!(error, MancalaError::NotPlayablePit(pit));
     }
 
     #[rstest]
@@ -407,7 +412,7 @@ mod test {
     fn test_mut_pop_scoring_pit_fails() {
         let mut game = Mancala::default();
         let error = game.mut_pop(0).unwrap_err();
-        assert_eq!(error, MancalaError::NotPlayerPit(0));
+        assert_eq!(error, MancalaError::NotPlayablePit(0));
     }
 
     #[test]
@@ -488,7 +493,7 @@ mod test {
     #[test]
     fn test_move_one_wrap_ok() {
         let mut game = Mancala::from([0; N]);
-        let gt = Mancala::from(([0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], true));
+        let gt = Mancala::from(([0, 0, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 0], true));
         game.board[1] = 13;
         game = game.mut_act(1).unwrap();
         assert_eq!(game, gt);
@@ -506,22 +511,20 @@ mod test {
 
     #[test]
     fn test_capture_player_one_ok() {
-        let mut game = Mancala::from((
-            [
-                0, /**/ 1, 0, 0, 0, 0, 1, /**/ 2, /**/
-                0, 0, 0, 0, 1, 1,
-            ],
-            false,
-        ));
-        let gt = Mancala::from((
-            [
-                0, /**/ 0, 0, 0, 0, 0, 1, /**/ 2, /**/
-                0, 0, 0, 0, 0, 1,
-            ],
-            true,
-        ));
+        //                                      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13
+        let mut game = Mancala::from(([0, 1, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 1], false));
+        let ground_t = Mancala::from(([0, 0, 0, 0, 0, 0, 1, 4, 0, 0, 0, 0, 0, 1], true));
         game = game.mut_act(1).unwrap();
-        assert_eq!(game, gt);
+        assert_eq!(game, ground_t);
+    }
+
+    #[test]
+    fn test_capture_player_two_ok() {
+        //                                      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13
+        let mut game = Mancala::from(([0, 1, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 0], true));
+        let ground_t = Mancala::from(([2, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0], false));
+        game = game.mut_act(12).unwrap();
+        assert_eq!(game, ground_t);
     }
 
     // Test that

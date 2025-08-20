@@ -12,5 +12,5 @@ pub enum MancalaError {
 
     /// The pit is not a playable pit
     #[error("The pit {0} is not a playable pit")]
-    NotPlayerPit(usize),
+    NotPlayablePit(usize),
 }
