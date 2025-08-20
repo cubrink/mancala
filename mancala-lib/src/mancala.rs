@@ -7,7 +7,7 @@ const N: usize = ROWS * PITS;
 
 /// Holds data to represent a game of mancala
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct Mancala {
+pub struct Mancala {
     /// The mancala board represented as a flat array.
     ///
     /// Indices 0 and 7 (N/2), represent the scoring pits
@@ -92,7 +92,6 @@ impl GameState for Mancala {
     fn mut_act(&mut self, pit: usize) -> Result<Self, Self::Error> {
         // Pre-compute useful quantities
         let stones = self.mut_pop(pit)?;
-        let player: usize = self.player as usize;
         let a = MoveData {
             start: 1,
             end: Self::PITS - 1,

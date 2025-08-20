@@ -7,4 +7,5 @@ edition = "2024"
 thiserror = "2.0.14"
 
 [dev-dependencies]
+criterion = "0.7.0"
 rstest = "0.26.1"
