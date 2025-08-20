@@ -20,6 +20,7 @@ struct Mancala {
 }
 
 /// Holds data about what regions the player can make moves for.
+#[derive(Debug)]
 struct MoveData {
     /// The index of the first non-scoring pit for a player.
     pub start: usize,
@@ -519,10 +520,10 @@ mod test {
     }
 
     #[test]
-    fn test_capture_player_two_ok() {
+    fn test_capture_player_two_collect_player_one_ok() {
         //                                      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13
         let mut game = Mancala::from(([0, 1, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 0], true));
-        let ground_t = Mancala::from(([2, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0], false));
+        let ground_t = Mancala::from(([2, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0], false));
         game = game.mut_act(12).unwrap();
         assert_eq!(game, ground_t);
     }
