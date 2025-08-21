@@ -1,8 +1,11 @@
 [package]
-name = "mancala-bin"
-version = "0.0.0"
+name = "perft"
+version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.45", features = ["derive"] }
 mancala-lib = { version = "0.0.0", path = "../mancala-lib" }
+
+[registries]
+kellnr = { index = "http://192.168.1.15:8000/api/v1/crates" }
