@@ -29,7 +29,18 @@ pub fn perft_divide(game: &Mancala, depth: usize) -> [usize; 6] {
 }
 
 pub fn perft(game: &Mancala, depth: usize) -> usize {
-    todo!("Implement perft");
+    if depth == 0 {
+        // If no depth to search, then we are just at this node
+        return 1;
+    } else if depth == 1 {
+        // If the depth is just one, we look at valid actions from this node.
+        return game.get_actions().len();
+    } else {
+        game.get_actions()
+            .iter()
+            .map(|a| perft(&game.act(*a).unwrap(), depth - 1))
+            .sum()
+    }
 }
 
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
