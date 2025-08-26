@@ -5,10 +5,15 @@ use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 
 #[derive(Debug)]
+/// Packages the results of a perft run
 pub struct PerftResults {
+    /// The total number of nodes visited.
     total: usize,
-    args: PerftArgs,
+    /// The options perft ran with
+    options: PerftOptions,
+    /// Information about the divide calculations, if relevant
     divide: Option<Map<usize, usize>>,
+    /// The starting state that the search was based on.
     start: Mancala,
 }
 
