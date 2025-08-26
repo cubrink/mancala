@@ -1,39 +1,41 @@
-use clap::Parser;
+use std::iter::Map;
+
+use crate::cli::{PerftArgs, PerftOptions};
+use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 
-/// Command line optoins for the performance testing tool
-#[derive(Parser, Debug)]
-#[command(name = "perft")]
-#[command(about = "A tool for Mancala position analysis")]
-#[command(version)]
-struct Cli {
-    /// Search depth
-    #[arg(short, long)]
-    depth: Option<usize>,
-
-    /// Sequence of actions to reach starting position (comma-separated)
-    /// Example: "1,3,5" applies actions 1, then 3, then 5
-    #[arg(short, long)]
-    actions: Option<String>,
-
-    /// The amount of threads to use
-    #[arg(short, long)]
-    threads: Option<usize>,
-
-    /// Show a count of states on a per-move basis
-    divide: Option<bool>,
+#[derive(Debug)]
+pub struct PerftResults {
+    total: usize,
+    args: PerftArgs,
+    divide: Option<Map<usize, usize>>,
+    start: Mancala,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Check if no arguments were provided
-    if std::env::args().len() == 1 {
-        eprintln!("perft - A perft tool for Mancala position analysis");
-        eprintln!();
-        eprintln!("No arguments provided. Use --help for usage information.");
-        std::process::exit(1);
+impl std::fmt::Display for PerftResults {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let output = todo!("Created formatted output");
+        write!(f, "{}", output);
     }
-    let cli: Cli = Cli::parse();
+}
 
-    println!("{cli:#?}");
-    Ok(())
+pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
+    todo!();
+}
+
+/// Prepares an initial gamestate given an perft args, or errors if the args are invalid.
+///
+/// * `options` - perft args
+fn prepare_gamestate(args: &PerftArgs) -> anyhow::Result<Mancala> {
+    let options = PerftOptions::try_from(args)?;
+    match &options.actions {
+        None => Ok(Mancala::default()),
+        Some(actions) => {
+            let mut game = Mancala::default();
+            for action in actions {
+                game.mut_act(*action)?;
+            }
+            Ok(game)
+        }
+    }
 }
