@@ -12,7 +12,7 @@ pub struct PerftResults {
     /// The options perft ran with
     options: PerftOptions,
     /// Information about the divide calculations, if relevant
-    divide: Option<Map<usize, usize>>,
+    divide: Option<[usize; 12]>,
     /// The starting state that the search was based on.
     start: Mancala,
 }
