@@ -42,7 +42,54 @@ enum PerftError {
     /// An unimplemented feature was requested
     #[error("The feature '{0}' has not been implemented yet.")]
     NotImplemented(String),
+    /// An action provided is invalid
+    #[error("The action '{0}' is not a valid action.")]
+    InvalidAction(String),
 }
+
+impl TryFrom<&PerftArgs> for PerftOptions {
+    type Error = PerftError;
+
+    /// Validates Perft Arguments after they've been parsed.
+    ///
+    /// Arguments:
+    /// * `args` - The parsed arguments from `clap`
+    ///
+    /// Errors:
+    /// * `PerftError::NotImplemented`
+    ///     Raised if an unimplemented flag is requested
+    fn try_from(args: &PerftArgs) -> Result<Self, Self::Error> {
+        let actions = match &args.actions {
+            None => None,
+            Some(a) => {
+                let actions = a
+                    .split(',')
+                    .map(|segment| segment.trim().parse::<usize>())
+                    .collect::<Vec<Result<usize, _>>>();
+                if actions.iter().any(Result::is_err) {
+                    Err(PerftError::InvalidAction(a.to_string()))?;
+                }
+                Some(
+                    actions
+                        .iter()
+                        .flatten()
+                        .map(usize::clone)
+                        .collect::<Vec<usize>>(),
+                )
+            }
+        };
+        let threads: Option<usize> = args.threads.clone();
+        let depth: usize = args.depth;
+        let divide: bool = args.divide.unwrap_or(false);
+        Ok(PerftOptions {
+            depth,
+            actions,
+            threads,
+            divide,
+        })
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check if no arguments were provided
     if std::env::args().len() == 1 {
@@ -51,10 +98,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("No arguments provided. Use --help for usage information.");
         std::process::exit(1);
     }
-    let cli: PerftArgs = PerftArgs::parse();
+    let perft_args: PerftArgs = PerftArgs::parse();
 
+    let perft_options: PerftOptions = PerftOptions::try_from(&perft_args)?;
     println!("Parsed CLI args:");
-    println!("{cli:#?}");
+    println!("{perft_args:#?}");
     println!("Application logic for `perft` not yet implemented. Exiting early.");
+    println!("Validated args");
+    println!("{perft_options:#?}");
     Ok(())
 }
