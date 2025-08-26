@@ -34,6 +34,44 @@ pub fn perft(game: &Mancala, options: &PerftOptions) -> usize {
 
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
     todo!("Implement start_perft");
+    let options = PerftOptions::try_from(args)?;
+    let game = prepare_gamestate(&options)?;
+
+    if options.divide {
+        let divide_counts: [usize; 6] = match &options.threads {
+            Some(threads) => todo!("Threading not implemented"),
+            None => perft_divide(&game, &options),
+        };
+        let total: usize = divide_counts.iter().sum();
+        let offset: usize = game.get_player() as usize * 7;
+        let divide: Option<[usize; 12]> = Some(std::array::from_fn(|i| {
+            if i < 6 {
+                i + 1 + offset
+            } else {
+                divide_counts[i - 6]
+            }
+        }));
+        let start = game;
+        Ok(PerftResults {
+            total,
+            options,
+            divide,
+            start,
+        })
+    } else {
+        let total: usize = match &options.threads {
+            Some(threads) => todo!("Threading not implemented"),
+            None => perft(&game, &options),
+        };
+        let divide = None;
+        let start = game;
+        Ok(PerftResults {
+            total,
+            options,
+            divide,
+            start,
+        })
+    }
 }
 
 /// Prepares an initial gamestate given a perft options, or errors if the options are invalid.
