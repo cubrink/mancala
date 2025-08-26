@@ -29,7 +29,7 @@ pub fn perft_divide(game: &Mancala, depth: usize) -> [usize; 6] {
 }
 
 pub fn perft(game: &Mancala, depth: usize) -> usize {
-    if depth == 0 {
+    if depth == 0 || game.is_completed() {
         // If no depth to search, then we are just at this node
         return 1;
     } else if depth == 1 {
