@@ -19,8 +19,8 @@ pub struct PerftResults {
 
 impl std::fmt::Display for PerftResults {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let output = todo!("Created formatted output");
-        write!(f, "{}", output);
+        let output = format!("Total nodes: {}", self.total);
+        write!(f, "{}", output)
     }
 }
 
