@@ -33,7 +33,6 @@ pub fn perft(game: &Mancala, options: &PerftOptions) -> usize {
 }
 
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
-    todo!("Implement start_perft");
     let options = PerftOptions::try_from(args)?;
     let game = prepare_gamestate(&options)?;
 
