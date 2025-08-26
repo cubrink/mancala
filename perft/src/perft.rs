@@ -24,6 +24,14 @@ impl std::fmt::Display for PerftResults {
     }
 }
 
+pub fn perft_divide(game: &Mancala, options: &PerftOptions) -> [usize; 6] {
+    todo!("Implement perft_divide");
+}
+
+pub fn perft(game: &Mancala, options: &PerftOptions) -> usize {
+    todo!("Implement perft");
+}
+
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
     todo!("Implement start_perft");
 }
