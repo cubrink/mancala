@@ -39,7 +39,7 @@ pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
     if options.divide {
         let divide_counts: [usize; 6] = match &options.threads {
             Some(threads) => todo!("Threading not implemented"),
-            None => perft_divide(&game, &options),
+            None => perft_divide(&game, options.depth),
         };
         let total: usize = divide_counts.iter().sum();
         let offset: usize = game.get_player() as usize * 7;
@@ -60,7 +60,7 @@ pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
     } else {
         let total: usize = match &options.threads {
             Some(threads) => todo!("Threading not implemented"),
-            None => perft(&game, &options),
+            None => perft(&game, options.depth),
         };
         let divide = None;
         let start = game;
