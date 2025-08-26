@@ -20,14 +20,13 @@ impl std::fmt::Display for PerftResults {
 }
 
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
-    todo!();
+    todo!("Implement start_perft");
 }
 
-/// Prepares an initial gamestate given an perft args, or errors if the args are invalid.
+/// Prepares an initial gamestate given a perft options, or errors if the options are invalid.
 ///
 /// * `options` - perft args
-fn prepare_gamestate(args: &PerftArgs) -> anyhow::Result<Mancala> {
-    let options = PerftOptions::try_from(args)?;
+fn prepare_gamestate(options: &PerftOptions) -> anyhow::Result<Mancala> {
     match &options.actions {
         None => Ok(Mancala::default()),
         Some(actions) => {
