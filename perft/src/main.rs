@@ -25,6 +25,7 @@ struct PerftArgs {
 }
 
 /// Internal options used to control a perft search
+#[derive(Debug)]
 struct PerftOptions {
     /// The depth to search to.
     depth: usize,
