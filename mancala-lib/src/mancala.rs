@@ -1,5 +1,5 @@
-use crate::error::MancalaError;
 use crate::GameState;
+use crate::error::MancalaError;
 
 const PITS: usize = 7;
 const ROWS: usize = 2;
