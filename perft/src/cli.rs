@@ -22,6 +22,10 @@ pub struct PerftArgs {
     /// Show a count of states on a per-move basis
     #[arg(long, action = clap::ArgAction::SetTrue)]
     divide: Option<bool>,
+
+    /// Show ascii art of board at output
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    ascii: Option<bool>,
 }
 
 /// Internal options used to control a perft search
@@ -35,6 +39,8 @@ pub struct PerftOptions {
     pub threads: Option<usize>,
     /// Whether to do a divide search.
     pub divide: bool,
+    /// Show ascii art of board at output
+    pub ascii: bool,
 }
 
 impl TryFrom<&PerftArgs> for PerftOptions {
@@ -71,11 +77,13 @@ impl TryFrom<&PerftArgs> for PerftOptions {
         let threads: Option<usize> = args.threads;
         let depth: usize = args.depth;
         let divide: bool = args.divide.unwrap_or(false);
+        let ascii: bool = args.ascii.unwrap_or(false);
         Ok(PerftOptions {
             depth,
             actions,
             threads,
             divide,
+            ascii,
         })
     }
 }
