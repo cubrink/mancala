@@ -35,8 +35,10 @@ impl std::fmt::Display for PerftResults {
                     .collect();
             }
         }
-        lines.push("\n".to_string());
-        lines.push(self.start.to_string());
+        if self.options.ascii {
+            lines.push("\n".to_string());
+            lines.push(self.start.to_string());
+        }
         let output = lines.join("\n");
         write!(f, "{output}")
     }
