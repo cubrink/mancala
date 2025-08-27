@@ -18,7 +18,7 @@ pub struct PerftResults {
 impl std::fmt::Display for PerftResults {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let output = format!("Total nodes: {}", self.total);
-        write!(f, "{}", output)
+        write!(f, "{output}")
     }
 }
 
@@ -29,7 +29,7 @@ pub fn perft_divide(game: &Mancala, depth: usize) -> [usize; 6] {
 pub fn perft(game: &Mancala, depth: usize) -> usize {
     if depth == 0 || game.is_completed() {
         // If no depth to search, then we are just at this node
-        return 1;
+        1
     } else if depth == 1 {
         // If the depth is just one, we look at valid actions from this node.
         return game.get_actions().len();

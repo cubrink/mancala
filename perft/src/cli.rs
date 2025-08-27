@@ -46,7 +46,7 @@ impl TryFrom<&PerftArgs> for PerftOptions {
     ///
     /// Errors:
     /// * `PerftError::NotImplemented`
-    ///     Raised if an unimplemented flag is requested
+    ///   Raised if an unimplemented flag is requested
     fn try_from(args: &PerftArgs) -> Result<Self, Self::Error> {
         let actions = match &args.actions {
             None => None,
@@ -67,7 +67,7 @@ impl TryFrom<&PerftArgs> for PerftOptions {
                 )
             }
         };
-        let threads: Option<usize> = args.threads.clone();
+        let threads: Option<usize> = args.threads;
         let depth: usize = args.depth;
         let divide: bool = args.divide.unwrap_or(false);
         Ok(PerftOptions {
