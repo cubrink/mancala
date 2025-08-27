@@ -1,5 +1,3 @@
-use std::iter::Map;
-
 use crate::cli::{PerftArgs, PerftOptions};
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
