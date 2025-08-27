@@ -20,7 +20,24 @@ pub struct PerftResults {
 
 impl std::fmt::Display for PerftResults {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let output = format!("Total nodes: {}", self.total);
+        let mut lines: Vec<String> = Vec::new();
+        lines.push(format!("Total nodes: {}", self.total));
+        match self.divide {
+            None => (),
+            Some(divide) => {
+                let _: Vec<()> = divide[6..]
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, total)| {
+                        let pit = idx + 1;
+                        lines.push(format!("    [{pit}]: {total}"));
+                    })
+                    .collect();
+            }
+        }
+        lines.push("\n".to_string());
+        lines.push(self.start.to_string());
+        let output = lines.join("\n");
         write!(f, "{output}")
     }
 }
