@@ -26,7 +26,17 @@ impl std::fmt::Display for PerftResults {
 }
 
 pub fn perft_divide(game: &Mancala, depth: usize) -> [usize; 6] {
-    todo!("Implement perft_divide");
+    let actions = game.get_actions();
+    let mut divide: [usize; 6] = [0; 6];
+    let _: Vec<()> = actions
+        .iter()
+        .map(|a| {
+            let game = game.act(*a).unwrap();
+            let total = perft(&game, depth - 1);
+            divide[(*a - 1) % 7] = total;
+        })
+        .collect();
+    divide
 }
 
 pub fn perft(game: &Mancala, depth: usize) -> usize {
