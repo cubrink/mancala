@@ -20,7 +20,7 @@ pub struct PerftArgs {
     threads: Option<usize>,
 
     /// Show a count of states on a per-move basis
-    #[arg(long)]
+    #[arg(long, action = clap::ArgAction::SetTrue)]
     divide: Option<bool>,
 }
 
