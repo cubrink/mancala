@@ -1,4 +1,7 @@
-use crate::cli::{PerftArgs, PerftOptions};
+use crate::{
+    cli::{PerftArgs, PerftOptions},
+    error::PerftError,
+};
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 
