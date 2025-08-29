@@ -1,12 +1,12 @@
 use anyhow::Result;
 use clap::Parser;
 
-mod cli;
+mod dispatch;
 mod error;
 mod perft;
+mod types;
 
-use crate::cli::PerftArgs;
-use crate::perft::start_perft;
+use crate::types::{PerftArgs, PerftResults};
 
 fn main() -> Result<()> {
     // Check if no arguments were provided
@@ -18,7 +18,7 @@ fn main() -> Result<()> {
     }
     let perft_args: PerftArgs = PerftArgs::parse();
 
-    let results = start_perft(&perft_args)?;
+    let results: PerftResults = dispatch::start(&perft_args)?;
     println!("{results}");
 
     Ok(())

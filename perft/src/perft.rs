@@ -1,62 +1,9 @@
-use crate::cli::{PerftArgs, PerftOptions};
 use crate::error::PerftError;
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
+
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
-use rayon::ThreadPool;
-
-#[derive(Debug)]
-/// Packages the results of a perft run
-pub struct PerftResults {
-    /// The total number of nodes visited.
-    total: usize,
-    /// The options perft ran with
-    options: PerftOptions,
-    /// Information about the divide calculations, if relevant
-    divide: Option<[usize; 12]>,
-    /// The starting state that the search was based on.
-    start: Mancala,
-}
-
-impl std::fmt::Display for PerftResults {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut lines: Vec<String> = Vec::new();
-        let actions: String = match &self.options.actions {
-            None => "".to_string(),
-            Some(actions) => {
-                let actions = actions
-                    .iter()
-                    .map(usize::to_string)
-                    .collect::<Vec<String>>()
-                    .join("->");
-                format!(" [start->{}]", actions)
-            }
-        };
-        lines.push(format!(
-            "Perft({}) = {}{}",
-            self.options.depth, self.total, actions
-        ));
-        match self.divide {
-            None => (),
-            Some(divide) => {
-                let _: Vec<()> = divide[6..]
-                    .iter()
-                    .enumerate()
-                    .map(|(idx, total)| {
-                        let pit = idx + 1;
-                        lines.push(format!("    [{pit}]: {total}"));
-                    })
-                    .collect();
-            }
-        }
-        if self.options.ascii {
-            lines.push("\n".to_string());
-            lines.push(self.start.to_string());
-        }
-        let output = lines.join("\n");
-        write!(f, "{output}")
-    }
-}
 
 pub fn perft_divide(game: &Mancala, depth: usize) -> [usize; 6] {
     let actions = game.get_actions();
@@ -87,12 +34,13 @@ pub fn perft(game: &Mancala, depth: usize) -> usize {
     }
 }
 
-pub fn perft_parallel(game: &Mancala, depth: usize, pool: ThreadPool) -> usize {
+#[cfg(feature = "parallel")]
+pub fn perft_parallel(game: &Mancala, depth: usize, threads: usize) -> Result<usize> {
     if depth == 0 || game.is_completed() {
         // If no depth to search, then we are just at this node
         1
     } else {
-        pool.install(|| {
+        get_pool(threads)?.install(|| {
             game.get_actions()
                 .par_iter()
                 .map(|a| perft(&game.act(*a).unwrap(), depth - 1))
@@ -101,10 +49,11 @@ pub fn perft_parallel(game: &Mancala, depth: usize, pool: ThreadPool) -> usize {
     }
 }
 
-pub fn perft_divide_parallel(game: &Mancala, depth: usize, pool: ThreadPool) -> [usize; 6] {
+#[cfg(feature = "parallel")]
+pub fn perft_divide_parallel(game: &Mancala, depth: usize, threads: usize) -> Result<[usize; 6]> {
     let actions = game.get_actions();
     let mut divide: [usize; 6] = [0; 6];
-    let results: Vec<(usize, usize)> = pool.install(|| {
+    let results: Vec<(usize, usize)> = get_pool(threads)?.install(|| {
         actions
             .par_iter()
             .map(|a| {
@@ -120,73 +69,23 @@ pub fn perft_divide_parallel(game: &Mancala, depth: usize, pool: ThreadPool) -> 
     divide
 }
 
-pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
-    let options = PerftOptions::try_from(args)?;
-    let game = prepare_gamestate(&options)?;
-
-    if options.divide {
-        let divide_counts: [usize; 6] = match &options.threads {
-            Some(threads) => {
-                let pool: rayon::ThreadPool = rayon::ThreadPoolBuilder::new()
-                    .num_threads(*threads)
-                    .build()?;
-                perft_divide_parallel(&game, options.depth, pool)
-            }
-            None => perft_divide(&game, options.depth),
-        };
-        let total: usize = divide_counts.iter().sum();
-        let offset: usize = game.get_player() as usize * 7;
-        let divide: Option<[usize; 12]> = Some(std::array::from_fn(|i| {
-            if i < 6 {
-                i + 1 + offset
-            } else {
-                divide_counts[i - 6]
-            }
-        }));
-        let start = game;
-        Ok(PerftResults {
-            total,
-            options,
-            divide,
-            start,
-        })
-    } else {
-        let total: usize = match &options.threads {
-            Some(threads) => {
-                let pool: rayon::ThreadPool = rayon::ThreadPoolBuilder::new()
-                    .num_threads(*threads)
-                    .build()?;
-                perft_parallel(&game, options.depth, pool)
-            }
-            None => perft(&game, options.depth),
-        };
-        let divide = None;
-        let start = game;
-        Ok(PerftResults {
-            total,
-            options,
-            divide,
-            start,
-        })
-    }
+#[cfg(not(feature = "parallel"))]
+pub fn perft_divide_parallel(
+    _game: &Mancala,
+    _depth: usize,
+    _threads: usize,
+) -> Result<[usize; 6]> {
+    Err(PerftError::MissingFeatures("parallel".to_string()))?
 }
 
-/// Prepares an initial gamestate given a perft options, or errors if the options are invalid.
-///
-/// * `options` - perft args
-fn prepare_gamestate(options: &PerftOptions) -> anyhow::Result<Mancala> {
-    match &options.actions {
-        None => Ok(Mancala::default()),
-        Some(actions) => {
-            let mut game = Mancala::default();
-            for action in actions {
-                if game.get_actions().contains(action) {
-                    game.mut_act(*action)?;
-                } else {
-                    Err(PerftError::InvalidStart(actions.clone()))?;
-                }
-            }
-            Ok(game)
-        }
-    }
+#[cfg(not(feature = "parallel"))]
+pub fn perft_parallel(_game: &Mancala, _depth: usize, _threads: usize) -> Result<usize> {
+    Err(PerftError::MissingFeatures("parallel".to_string()))?
+}
+
+#[cfg(feature = "parallel")]
+fn get_pool(threads: usize) -> Result<rayon::ThreadPool> {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(*threads)
+        .build()?
 }

@@ -1,5 +1,6 @@
 use crate::error::PerftError;
 use clap::Parser;
+use mancala_lib::Mancala;
 
 /// Command line options from the user for the performance testing tool
 #[derive(Parser, Debug)]
@@ -85,5 +86,58 @@ impl TryFrom<&PerftArgs> for PerftOptions {
             divide,
             ascii,
         })
+    }
+}
+
+#[derive(Debug)]
+/// Packages the results of a perft run
+pub struct PerftResults {
+    /// The total number of nodes visited.
+    pub total: usize,
+    /// The options perft ran with
+    pub options: PerftOptions,
+    /// Information about the divide calculations, if relevant
+    pub divide: Option<[usize; 12]>,
+    /// The starting state that the search was based on.
+    pub start: Mancala,
+}
+
+impl std::fmt::Display for PerftResults {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut lines: Vec<String> = Vec::new();
+        let actions: String = match &self.options.actions {
+            None => "".to_string(),
+            Some(actions) => {
+                let actions = actions
+                    .iter()
+                    .map(usize::to_string)
+                    .collect::<Vec<String>>()
+                    .join("->");
+                format!(" [start->{}]", actions)
+            }
+        };
+        lines.push(format!(
+            "Perft({}) = {}{}",
+            self.options.depth, self.total, actions
+        ));
+        match self.divide {
+            None => (),
+            Some(divide) => {
+                let _: Vec<()> = divide[6..]
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, total)| {
+                        let pit = idx + 1;
+                        lines.push(format!("    [{pit}]: {total}"));
+                    })
+                    .collect();
+            }
+        }
+        if self.options.ascii {
+            lines.push("\n".to_string());
+            lines.push(self.start.to_string());
+        }
+        let output = lines.join("\n");
+        write!(f, "{output}")
     }
 }

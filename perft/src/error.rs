@@ -8,4 +8,7 @@ pub enum PerftError {
     /// The starting move sequence is not valid.
     #[error("Invalid starting sequence '{0:?}'")]
     InvalidStart(Vec<usize>),
+    /// A feature is required to perform the action.
+    #[error("Cannot perform action, build with --features {0}")]
+    MissingFeatures(String),
 }
