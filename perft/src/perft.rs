@@ -73,6 +73,10 @@ pub fn perft(game: &Mancala, depth: usize) -> usize {
     }
 }
 
+pub fn perft_parallel(game: &Mancala, depth: usize, threads: usize) -> usize {
+    todo!("Implement perft parallel")
+}
+
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
     let options = PerftOptions::try_from(args)?;
     let game = prepare_gamestate(&options)?;
