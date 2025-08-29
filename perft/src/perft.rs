@@ -104,7 +104,7 @@ pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
         })
     } else {
         let total: usize = match &options.threads {
-            Some(threads) => todo!("Threading not implemented"),
+            Some(threads) => perft_parallel(&game, options.depth, *threads),
             None => perft(&game, options.depth),
         };
         let divide = None;
