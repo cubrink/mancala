@@ -417,6 +417,7 @@ dependencies = [
  "anyhow",
  "clap",
  "mancala-lib",
+ "rayon",
  "thiserror",
 ]
 
