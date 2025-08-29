@@ -1,4 +1,5 @@
 use crate::cli::{PerftArgs, PerftOptions};
+use crate::error::PerftError;
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 use rayon::prelude::*;
@@ -179,7 +180,11 @@ fn prepare_gamestate(options: &PerftOptions) -> anyhow::Result<Mancala> {
         Some(actions) => {
             let mut game = Mancala::default();
             for action in actions {
-                game.mut_act(*action)?;
+                if game.get_actions().contains(action) {
+                    game.mut_act(*action)?;
+                } else {
+                    Err(PerftError::InvalidStart(actions.clone()))?;
+                }
             }
             Ok(game)
         }
