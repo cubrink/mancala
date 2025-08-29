@@ -9,6 +9,7 @@ pub enum PerftError {
     #[error("Invalid starting sequence '{0:?}'")]
     InvalidStart(Vec<usize>),
     /// A feature is required to perform the action.
+    #[allow(dead_code)]
     #[error("Cannot perform action, build with --features {0}")]
     MissingFeatures(String),
 }

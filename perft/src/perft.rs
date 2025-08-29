@@ -1,4 +1,3 @@
-use crate::error::PerftError;
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 
@@ -38,14 +37,14 @@ pub fn perft(game: &Mancala, depth: usize) -> usize {
 pub fn perft_parallel(game: &Mancala, depth: usize, threads: usize) -> Result<usize> {
     if depth == 0 || game.is_completed() {
         // If no depth to search, then we are just at this node
-        1
+        Ok(1)
     } else {
-        get_pool(threads)?.install(|| {
+        Ok(get_pool(threads)?.install(|| {
             game.get_actions()
                 .par_iter()
                 .map(|a| perft(&game.act(*a).unwrap(), depth - 1))
                 .sum()
-        })
+        }))
     }
 }
 
@@ -66,7 +65,7 @@ pub fn perft_divide_parallel(game: &Mancala, depth: usize, threads: usize) -> Re
     for (idx, total) in results.iter() {
         divide[*idx] = *total;
     }
-    divide
+    Ok(divide)
 }
 
 #[cfg(not(feature = "parallel"))]
@@ -75,17 +74,19 @@ pub fn perft_divide_parallel(
     _depth: usize,
     _threads: usize,
 ) -> Result<[usize; 6]> {
+    use crate::error::PerftError;
     Err(PerftError::MissingFeatures("parallel".to_string()))?
 }
 
 #[cfg(not(feature = "parallel"))]
 pub fn perft_parallel(_game: &Mancala, _depth: usize, _threads: usize) -> Result<usize> {
+    use crate::error::PerftError;
     Err(PerftError::MissingFeatures("parallel".to_string()))?
 }
 
 #[cfg(feature = "parallel")]
 fn get_pool(threads: usize) -> Result<rayon::ThreadPool> {
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(*threads)
-        .build()?
+    Ok(rayon::ThreadPoolBuilder::new()
+        .num_threads(threads)
+        .build()?)
 }
