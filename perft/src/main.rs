@@ -19,7 +19,6 @@ fn main() -> Result<()> {
     let perft_args: PerftArgs = PerftArgs::parse();
 
     let results = start_perft(&perft_args)?;
-    println!("Results:");
     println!("{results}");
 
     Ok(())
