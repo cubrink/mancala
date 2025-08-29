@@ -2,6 +2,7 @@ use crate::cli::{PerftArgs, PerftOptions};
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 use rayon::prelude::*;
+use rayon::ThreadPool;
 
 #[derive(Debug)]
 /// Packages the results of a perft run
@@ -71,8 +72,37 @@ pub fn perft(game: &Mancala, depth: usize) -> usize {
     }
 }
 
-pub fn perft_parallel(game: &Mancala, depth: usize, threads: usize) -> usize {
-    todo!("Implement perft parallel")
+pub fn perft_parallel(game: &Mancala, depth: usize, pool: ThreadPool) -> usize {
+    if depth == 0 || game.is_completed() {
+        // If no depth to search, then we are just at this node
+        1
+    } else {
+        pool.install(|| {
+            game.get_actions()
+                .par_iter()
+                .map(|a| perft(&game.act(*a).unwrap(), depth - 1))
+                .sum()
+        })
+    }
+}
+
+pub fn perft_divide_parallel(game: &Mancala, depth: usize, pool: ThreadPool) -> [usize; 6] {
+    let actions = game.get_actions();
+    let mut divide: [usize; 6] = [0; 6];
+    let results: Vec<(usize, usize)> = pool.install(|| {
+        actions
+            .par_iter()
+            .map(|a| {
+                let game = game.act(*a).unwrap();
+                let total = perft(&game, depth - 1);
+                ((*a - 1) % 7, total)
+            })
+            .collect()
+    });
+    for (idx, total) in results.iter() {
+        divide[*idx] = *total;
+    }
+    divide
 }
 
 pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
@@ -81,7 +111,12 @@ pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
 
     if options.divide {
         let divide_counts: [usize; 6] = match &options.threads {
-            Some(threads) => todo!("Threading not implemented"),
+            Some(threads) => {
+                let pool: rayon::ThreadPool = rayon::ThreadPoolBuilder::new()
+                    .num_threads(*threads)
+                    .build()?;
+                perft_divide_parallel(&game, options.depth, pool)
+            }
             None => perft_divide(&game, options.depth),
         };
         let total: usize = divide_counts.iter().sum();
@@ -102,7 +137,12 @@ pub fn start_perft(args: &PerftArgs) -> Result<PerftResults> {
         })
     } else {
         let total: usize = match &options.threads {
-            Some(threads) => perft_parallel(&game, options.depth, *threads),
+            Some(threads) => {
+                let pool: rayon::ThreadPool = rayon::ThreadPoolBuilder::new()
+                    .num_threads(*threads)
+                    .build()?;
+                perft_parallel(&game, options.depth, pool)
+            }
             None => perft(&game, options.depth),
         };
         let divide = None;
