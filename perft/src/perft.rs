@@ -1,9 +1,7 @@
-use crate::{
-    cli::{PerftArgs, PerftOptions},
-    error::PerftError,
-};
+use crate::cli::{PerftArgs, PerftOptions};
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
+use rayon::prelude::*;
 
 #[derive(Debug)]
 /// Packages the results of a perft run
