@@ -418,6 +418,7 @@ dependencies = [
  "clap",
  "mancala-lib",
  "rayon",
+ "rstest",
  "thiserror",
 ]
 

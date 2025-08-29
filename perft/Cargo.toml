@@ -12,3 +12,6 @@ thiserror = "2.0.16"
 
 [features]
 parallel = ["rayon"]
+
+[dev-dependencies]
+rstest = "0.26.1"
