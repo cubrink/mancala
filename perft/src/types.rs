@@ -113,7 +113,7 @@ impl std::fmt::Display for PerftResults {
                     .map(usize::to_string)
                     .collect::<Vec<String>>()
                     .join("->");
-                format!(" [start->{}]", actions)
+                format!(" [start->{actions}]")
             }
         };
         lines.push(format!(
