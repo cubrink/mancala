@@ -111,7 +111,7 @@ impl GameState for Mancala {
         let visited = Self::walk(pit, stones);
         visited.iter().for_each(|idx| self.board[*idx] += 1);
         let final_idx = match visited.iter().last() {
-            Some(final_idx) => Ok(final_idx.clone()),
+            Some(final_idx) => Ok(*final_idx),
             None => Err(MancalaError::NotPlayablePit(pit)),
         }?;
 
