@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "mancala-lib",
-    "mancala-bin",
     "mancala-player",
+    "perft",
 ]
 resolver = "3"

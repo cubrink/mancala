@@ -443,7 +443,7 @@ mod test {
         game.board[9] = 55;
         let output: String = game.to_string();
         println!();
-        println!("{}", output);
+        println!("{output}");
     }
 
     #[test]
