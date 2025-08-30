@@ -25,7 +25,7 @@ __Technical__
 
 __Theoretical__
 1. What is the shortest possible game(s)?
-    - How does this different between different variants of Mancala?
+    - How does this differ between different variants of Mancala?
 2. What are the most stones that can fit go into a single pit?
 3. What is the minimum number stones that can go into a scoring pit?
 4. When is the earliest move where a state can be reached by different sequences of actions?
