@@ -32,6 +32,15 @@ struct MoveData {
     pub scorepit: usize,
 }
 
+/// Holds data from computing Mancala::walk
+#[derive(Debug, PartialEq)]
+struct WalkData {
+    /// A board saying which indicies were visited.
+    pub visited: [usize; N],
+    /// A note saying the last index to be visited.
+    pub final_idx: usize,
+}
+
 impl Mancala {
     const _ADJACENT_TABLE: [Option<usize>; Self::N] = [
         None,
@@ -62,10 +71,14 @@ impl Mancala {
     ///
     /// * `start` - The location to start walking from
     /// * `steps` - How many steps to take
-    fn walk(start: usize, steps: usize) -> Vec<usize> {
-        let mut visited: Vec<usize> = Vec::with_capacity(N - 1);
+    fn walk(start: usize, steps: usize) -> WalkData {
         let player = start / Self::PITS;
         let skip = player * Self::PITS;
+
+        let wrap_count = steps / (N - 1);
+        let mut visited: [usize; N] = [wrap_count; N];
+        visited[skip] = 0;
+        let steps = steps % (N - 1);
 
         let mut offset: usize = 0;
         for s in 1..=steps {
@@ -73,9 +86,10 @@ impl Mancala {
                 offset += 1;
             }
             let idx = (start + s + offset) % Self::N;
-            visited.push(idx);
+            visited[idx] += 1;
         }
-        visited
+        let final_idx = (start + steps + offset) % Self::N;
+        WalkData { visited, final_idx }
     }
 }
 
@@ -108,12 +122,15 @@ impl GameState for Mancala {
         };
 
         // General game loop
-        let visited = Self::walk(pit, stones);
-        visited.iter().for_each(|idx| self.board[*idx] += 1);
-        let final_idx = match visited.iter().last() {
-            Some(final_idx) => Ok(*final_idx),
-            None => Err(MancalaError::NotPlayablePit(pit)),
-        }?;
+        let WalkData { visited, final_idx } = Self::walk(pit, stones);
+        visited
+            .iter()
+            .enumerate()
+            // .filter_map(|(idx, visited)| match visited {
+            //     0 => None,
+            //     _ => Some(idx),
+            // })
+            .for_each(|(idx, v)| self.board[idx] += v);
 
         // Handle special rules
         // 1. Capture player pit if landed in your own empty pit
@@ -449,35 +466,60 @@ mod test {
     #[test]
     fn test_walk_simple_ok() {
         let visited = Mancala::walk(1, 4);
-        let gt = vec![2, 3, 4, 5];
+        let gt = WalkData {
+            visited: [0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            final_idx: 5,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_scorepit_ok() {
         let visited = Mancala::walk(5, 5);
-        let gt = vec![6, 7, 8, 9, 10];
+        let gt = WalkData {
+            visited: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+            final_idx: 10,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_p2_scorepit_ok() {
         let visited = Mancala::walk(12, 5);
-        let gt = vec![13, 0, 1, 2, 3];
+        let gt = WalkData {
+            visited: [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            final_idx: 3,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_skip_p2_scorepit_ok() {
         let visited = Mancala::walk(6, 8);
-        let gt = vec![7, 8, 9, 10, 11, 12, 13, 1];
+        let gt = WalkData {
+            visited: [0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+            final_idx: 1,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_skip_p1_scorepit_ok() {
         let visited = Mancala::walk(13, 8);
-        let gt = vec![0, 1, 2, 3, 4, 5, 6, 8];
+        let gt = WalkData {
+            visited: [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0],
+            final_idx: 8,
+        };
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_walk_wrap_twice_ok() {
+        let visited = Mancala::walk(1, 26);
+        let gt = WalkData {
+            visited: [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            final_idx: 1,
+        };
         assert_eq!(visited, gt);
     }
 
