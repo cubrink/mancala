@@ -1,5 +1,5 @@
-use crate::GameState;
 use crate::error::MancalaError;
+use crate::GameState;
 
 const PITS: usize = 7;
 const ROWS: usize = 2;
@@ -63,7 +63,7 @@ impl Mancala {
     /// * `start` - The location to start walking from
     /// * `steps` - How many steps to take
     fn walk(start: usize, steps: usize) -> Vec<usize> {
-        let mut visited = Vec::<usize>::new();
+        let mut visited: Vec<usize> = Vec::with_capacity(N - 1);
         let player = start / Self::PITS;
         let skip = player * Self::PITS;
 
