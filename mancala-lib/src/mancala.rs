@@ -97,6 +97,8 @@ impl GameState for Mancala {
     type Error = MancalaError;
     type Player = bool;
     type Board = [usize; N];
+    type Action = usize;
+    type ActionSequence = heapless::Vec<Self::Action, { PITS - 1 }>;
 
     fn act(&self, pit: usize) -> Result<Self, Self::Error> {
         let mut game = *self;
@@ -159,18 +161,19 @@ impl GameState for Mancala {
         Ok(*self)
     }
 
-    fn get_actions(&self) -> Vec<usize> {
+    fn get_actions(&self) -> Self::ActionSequence {
         let player: usize = self.player as usize;
         let start: usize = 1 + PITS * player;
         let end: usize = PITS * (1 + player);
-        self.board[start..end]
+        let actions: Self::ActionSequence = self.board[start..end]
             .iter()
             .enumerate()
             .flat_map(|(idx, stones)| match stones {
                 0 => None,
                 _ => Some(idx + start),
             })
-            .collect()
+            .collect();
+        actions
     }
 
     fn get_player(&self) -> bool {
@@ -437,7 +440,8 @@ mod test {
         let board: [usize; N] = [0, 1, 2, 3, 0, 0, 0, 7, 0, 4, 0, 5, 0, 6];
         let player: bool = false;
         let game = Mancala::from((board, player));
-        let gt: Vec<usize> = vec![1, 2, 3];
+        // let gt: <Mancala as GameState>::ActionSequence = vec![1, 2, 3];
+        let gt = <Mancala as GameState>::ActionSequence::from([1, 2, 3]);
         let actions = game.get_actions();
         assert_eq!(actions, gt);
     }
@@ -447,7 +451,8 @@ mod test {
         let board: [usize; N] = [0, 1, 2, 3, 0, 0, 0, 7, 0, 4, 0, 5, 0, 6];
         let player: bool = true;
         let game = Mancala::from((board, player));
-        let gt: Vec<usize> = vec![9, 11, 13];
+        // let gt: <Mancala as GameState>::ActionSequence = vec![9, 11, 13];
+        let gt = <Mancala as GameState>::ActionSequence::from([9, 11, 13]);
         let actions = game.get_actions();
         assert_eq!(actions, gt);
     }
