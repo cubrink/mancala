@@ -5,8 +5,13 @@ edition = "2024"
 
 [dependencies]
 heapless = "0.9.1"
+phf = { version = "0.13.1", features = ["macros"] }
 thiserror = "2.0.14"
 
 [dev-dependencies]
 criterion = "0.7.0"
 rstest = "0.26.1"
+
+# [[bin]]
+# name = "precompute_walk"
+# path = "bin/precompute_walk.rs"

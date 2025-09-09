@@ -1,4 +1,5 @@
 use crate::error::MancalaError;
+use crate::precomputed::get_precomputed_walk;
 use crate::GameState;
 
 const PITS: usize = 7;
@@ -33,8 +34,8 @@ struct MoveData {
 }
 
 /// Holds data from computing Mancala::walk
-#[derive(Debug, PartialEq)]
-struct WalkData {
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub(crate) struct WalkData {
     /// A board saying which indicies were visited.
     pub visited: [usize; N],
     /// A note saying the last index to be visited.
@@ -72,24 +73,10 @@ impl Mancala {
     /// * `start` - The location to start walking from
     /// * `steps` - How many steps to take
     fn walk(start: usize, steps: usize) -> WalkData {
-        let player = start / Self::PITS;
-        let skip = player * Self::PITS;
-
-        let wrap_count = steps / (N - 1);
-        let mut visited: [usize; N] = [wrap_count; N];
-        visited[skip] = 0;
-        let steps = steps % (N - 1);
-
-        let mut offset: usize = 0;
-        for s in 1..=steps {
-            if (start + s + offset) % Self::N == skip {
-                offset += 1;
-            }
-            let idx = (start + s + offset) % Self::N;
-            visited[idx] += 1;
+        match get_precomputed_walk(start, steps) {
+            Some(walk_data) => walk_data,
+            None => unreachable!("An invalid value was passed into an internal function"),
         }
-        let final_idx = (start + steps + offset) % Self::N;
-        WalkData { visited, final_idx }
     }
 }
 
