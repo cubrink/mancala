@@ -14,9 +14,15 @@ thiserror = "2.0.16"
 parallel = ["rayon"]
 
 [dev-dependencies]
+criterion = "0.7.0"
+divan = "0.1.21"
 iai-callgrind = "0.16.1"
 rstest = "0.26.1"
 
 [[bench]]
-name = "bench_perft"
+name = "instructions"
+harness = false
+
+[[bench]]
+name = "walltime"
 harness = false
