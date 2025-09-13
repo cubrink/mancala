@@ -27,7 +27,7 @@ pub fn perft(game: &Mancala, depth: usize) -> usize {
         1
     } else if depth == 1 {
         // If the depth is just one, we look at valid actions from this node.
-        return game.get_actions().len();
+        game.get_actions().len()
     } else {
         game.get_actions()
             .iter()
