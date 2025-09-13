@@ -1,5 +1,6 @@
 use crate::GameState;
 use crate::error::MancalaError;
+use crate::precomputed::get_precomputed_walk;
 
 const PITS: usize = 7;
 const ROWS: usize = 2;
@@ -32,6 +33,15 @@ struct MoveData {
     pub scorepit: usize,
 }
 
+/// Holds data from computing Mancala::walk
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub(crate) struct WalkData {
+    /// A board saying which indicies were visited.
+    pub visited: [usize; N],
+    /// A note saying the last index to be visited.
+    pub final_idx: usize,
+}
+
 impl Mancala {
     const _ADJACENT_TABLE: [Option<usize>; Self::N] = [
         None,
@@ -62,20 +72,11 @@ impl Mancala {
     ///
     /// * `start` - The location to start walking from
     /// * `steps` - How many steps to take
-    fn walk(start: usize, steps: usize) -> Vec<usize> {
-        let mut visited = Vec::<usize>::new();
-        let player = start / Self::PITS;
-        let skip = player * Self::PITS;
-
-        let mut offset: usize = 0;
-        for s in 1..=steps {
-            if (start + s + offset) % Self::N == skip {
-                offset += 1;
-            }
-            let idx = (start + s + offset) % Self::N;
-            visited.push(idx);
+    fn walk(start: usize, steps: usize) -> WalkData {
+        match get_precomputed_walk(start, steps) {
+            Some(walk_data) => walk_data,
+            None => unreachable!("An invalid value was passed into an internal function"),
         }
-        visited
     }
 }
 
@@ -83,6 +84,8 @@ impl GameState for Mancala {
     type Error = MancalaError;
     type Player = bool;
     type Board = [usize; N];
+    type Action = usize;
+    type ActionSequence = heapless::Vec<Self::Action, { PITS - 1 }>;
 
     fn act(&self, pit: usize) -> Result<Self, Self::Error> {
         let mut game = *self;
@@ -108,12 +111,15 @@ impl GameState for Mancala {
         };
 
         // General game loop
-        let visited = Self::walk(pit, stones);
-        visited.iter().for_each(|idx| self.board[*idx] += 1);
-        let final_idx = match visited.iter().last() {
-            Some(final_idx) => Ok(*final_idx),
-            None => Err(MancalaError::NotPlayablePit(pit)),
-        }?;
+        let WalkData { visited, final_idx } = Self::walk(pit, stones);
+        visited
+            .iter()
+            .enumerate()
+            // .filter_map(|(idx, visited)| match visited {
+            //     0 => None,
+            //     _ => Some(idx),
+            // })
+            .for_each(|(idx, v)| self.board[idx] += v);
 
         // Handle special rules
         // 1. Capture player pit if landed in your own empty pit
@@ -142,18 +148,19 @@ impl GameState for Mancala {
         Ok(*self)
     }
 
-    fn get_actions(&self) -> Vec<usize> {
+    fn get_actions(&self) -> Self::ActionSequence {
         let player: usize = self.player as usize;
         let start: usize = 1 + PITS * player;
         let end: usize = PITS * (1 + player);
-        self.board[start..end]
+        let actions: Self::ActionSequence = self.board[start..end]
             .iter()
             .enumerate()
             .flat_map(|(idx, stones)| match stones {
                 0 => None,
                 _ => Some(idx + start),
             })
-            .collect()
+            .collect();
+        actions
     }
 
     fn get_player(&self) -> bool {
@@ -420,7 +427,8 @@ mod test {
         let board: [usize; N] = [0, 1, 2, 3, 0, 0, 0, 7, 0, 4, 0, 5, 0, 6];
         let player: bool = false;
         let game = Mancala::from((board, player));
-        let gt: Vec<usize> = vec![1, 2, 3];
+        // let gt: <Mancala as GameState>::ActionSequence = vec![1, 2, 3];
+        let gt = <Mancala as GameState>::ActionSequence::from([1, 2, 3]);
         let actions = game.get_actions();
         assert_eq!(actions, gt);
     }
@@ -430,7 +438,8 @@ mod test {
         let board: [usize; N] = [0, 1, 2, 3, 0, 0, 0, 7, 0, 4, 0, 5, 0, 6];
         let player: bool = true;
         let game = Mancala::from((board, player));
-        let gt: Vec<usize> = vec![9, 11, 13];
+        // let gt: <Mancala as GameState>::ActionSequence = vec![9, 11, 13];
+        let gt = <Mancala as GameState>::ActionSequence::from([9, 11, 13]);
         let actions = game.get_actions();
         assert_eq!(actions, gt);
     }
@@ -443,41 +452,66 @@ mod test {
         game.board[9] = 55;
         let output: String = game.to_string();
         println!();
-        println!("{}", output);
+        println!("{output}");
     }
 
     #[test]
     fn test_walk_simple_ok() {
         let visited = Mancala::walk(1, 4);
-        let gt = vec![2, 3, 4, 5];
+        let gt = WalkData {
+            visited: [0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            final_idx: 5,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_scorepit_ok() {
         let visited = Mancala::walk(5, 5);
-        let gt = vec![6, 7, 8, 9, 10];
+        let gt = WalkData {
+            visited: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+            final_idx: 10,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_p2_scorepit_ok() {
         let visited = Mancala::walk(12, 5);
-        let gt = vec![13, 0, 1, 2, 3];
+        let gt = WalkData {
+            visited: [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            final_idx: 3,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_skip_p2_scorepit_ok() {
         let visited = Mancala::walk(6, 8);
-        let gt = vec![7, 8, 9, 10, 11, 12, 13, 1];
+        let gt = WalkData {
+            visited: [0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+            final_idx: 1,
+        };
         assert_eq!(visited, gt);
     }
 
     #[test]
     fn test_walk_skip_p1_scorepit_ok() {
         let visited = Mancala::walk(13, 8);
-        let gt = vec![0, 1, 2, 3, 4, 5, 6, 8];
+        let gt = WalkData {
+            visited: [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0],
+            final_idx: 8,
+        };
+        assert_eq!(visited, gt);
+    }
+
+    #[test]
+    fn test_walk_wrap_twice_ok() {
+        let visited = Mancala::walk(1, 26);
+        let gt = WalkData {
+            visited: [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            final_idx: 1,
+        };
         assert_eq!(visited, gt);
     }
 

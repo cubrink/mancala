@@ -1,0 +1,72 @@
+// This file was used to generate the precomputed table for how a stone walks
+// This is only needed once, but is kept for transparancy
+const PITS: usize = 7;
+const ROWS: usize = 2;
+const N: usize = PITS * ROWS;
+
+/// Holds data from computing Mancala::walk
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub struct WalkData {
+    /// A board saying which indicies were visited.
+    pub visited: [usize; N],
+    /// A note saying the last index to be visited.
+    pub final_idx: usize,
+}
+
+/// Returns an iterator of each index that gets visited when moving
+/// a pile of stones.
+///
+/// * `start` - The location to start walking from
+/// * `steps` - How many steps to take
+pub fn walk(start: usize, steps: usize) -> WalkData {
+    let player = start / PITS;
+    let skip = player * PITS;
+
+    let wrap_count = steps / (N - 1);
+    let mut visited: [usize; N] = [wrap_count; N];
+    visited[skip] = 0;
+    let steps = steps % (N - 1);
+
+    let mut offset: usize = 0;
+    for s in 1..=steps {
+        if (start + s + offset) % N == skip {
+            offset += 1;
+        }
+        let idx = (start + s + offset) % N;
+        visited[idx] += 1;
+    }
+    let final_idx = (start + steps + offset) % N;
+    WalkData { visited, final_idx }
+}
+
+fn main() {
+    println!("use crate::mancala::WalkData;");
+    println!("");
+
+    println!("pub fn get_precomputed_walk(start: usize, steps: usize) -> Option<WalkData> {{");
+    println!("    let idx: usize = 48 * (start - 1) + (steps - 1);");
+    println!("    PRECOMPUTED_WALK[idx]");
+    println!("}}");
+    println!("");
+
+    println!("static PRECOMPUTED_WALK: [Option<WalkData>; 624] = [");
+    let mut lines: [Option<WalkData>; 624] = [None; 624];
+    for start in 1..=13 {
+        if start == 7 {
+            continue;
+        };
+        for steps in 1..=48 {
+            let idx: usize = 48 * (start - 1) + (steps - 1);
+            let walk_data = walk(start, steps);
+            match lines[idx] {
+                Some(_) => unreachable!("Collision!"),
+                None => (),
+            };
+            lines[idx] = Some(walk_data);
+        }
+    }
+    for walk_data in lines.iter() {
+        println!("    {walk_data:?},");
+    }
+    println!("];");
+}

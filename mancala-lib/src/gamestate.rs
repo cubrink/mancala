@@ -13,6 +13,8 @@ where
     type Error: std::error::Error;
     type Player;
     type Board;
+    type ActionSequence: IntoIterator<Item = Self::Action>;
+    type Action;
 
     const PITS: usize = PITS;
     const ROWS: usize = ROWS;
@@ -39,7 +41,7 @@ where
     fn mut_act(&mut self, pit: usize) -> Result<Self, Self::Error>;
 
     /// Returns a vector of legal actions.
-    fn get_actions(&self) -> Vec<usize>;
+    fn get_actions(&self) -> Self::ActionSequence;
 
     /// Returns the current player in the game.
     fn get_player(&self) -> Self::Player;
