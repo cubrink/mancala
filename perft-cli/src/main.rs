@@ -2,11 +2,8 @@ use anyhow::Result;
 use clap::Parser;
 
 mod dispatch;
-mod error;
-mod perft;
-mod types;
 
-use crate::types::{PerftArgs, PerftResults};
+use perft::{PerftArgs, PerftResults};
 
 fn main() -> Result<()> {
     // Check if no arguments were provided
@@ -17,7 +14,6 @@ fn main() -> Result<()> {
         std::process::exit(1);
     }
     let perft_args: PerftArgs = PerftArgs::parse();
-
     let results: PerftResults = dispatch::start(&perft_args)?;
     println!("{results}");
 

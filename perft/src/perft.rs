@@ -7,6 +7,9 @@ use rayon::prelude::*;
 pub fn perft_divide(game: &Mancala, depth: usize) -> [usize; 6] {
     let actions = game.get_actions();
     let mut divide: [usize; 6] = [0; 6];
+    if depth == 0 {
+        return divide;
+    }
     let _: Vec<()> = actions
         .iter()
         .map(|a| {
@@ -89,4 +92,40 @@ fn get_pool(threads: usize) -> Result<rayon::ThreadPool> {
     Ok(rayon::ThreadPoolBuilder::new()
         .num_threads(threads)
         .build()?)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rstest::*;
+
+    // The shortest games are of length 10
+    #[rstest]
+    #[case::perft_0("0", "1")]
+    #[case::perft_1("1", "6")]
+    #[case::perft_2("2", "35")]
+    #[case::perft_3("3", "184")]
+    #[case::perft_4("4", "918")]
+    #[case::perft_5("5", "4405")]
+    #[case::perft_6("6", "20830")]
+    #[case::perft_7("7", "97014")]
+    #[case::perft_8("8", "447866")]
+    #[case::perft_9("9", "2049412")]
+    #[case::perft_10("10", "9326089")]
+    fn test_perft(#[case] depth: usize, #[case] gt: usize) {
+        let count = perft(&Mancala::default(), depth);
+        assert_eq!(count, gt);
+    }
+
+    #[rstest]
+    #[case::perft_0("0", [0, 0, 0, 0, 0, 0])]
+    #[case::perft_1("1", [1, 1, 1, 1, 1, 1])]
+    #[case::perft_2("2", [6, 6, 5, 6, 6, 6])]
+    #[case::perft_3("3", [32, 32, 30, 30, 30, 30])]
+    #[case::perft_4("4", [161, 167, 140, 155, 150, 145])]
+    #[case::perft_5("5", [761, 786, 696, 751, 719, 692])]
+    fn test_perft_divide(#[case] depth: usize, #[case] gt: [usize; 6]) {
+        let count = perft_divide(&Mancala::default(), depth);
+        assert_eq!(count, gt);
+    }
 }
