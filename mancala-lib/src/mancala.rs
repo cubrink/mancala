@@ -1,6 +1,6 @@
+use crate::GameState;
 use crate::error::MancalaError;
 use crate::precomputed::get_precomputed_walk;
-use crate::GameState;
 
 const PITS: usize = 7;
 const ROWS: usize = 2;
