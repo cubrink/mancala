@@ -2,6 +2,7 @@
 members = [
     "mancala-lib",
     "mancala-player",
-    "perft", "perft-cli",
+    "perft",
+    "perft-cli",
 ]
 resolver = "3"
