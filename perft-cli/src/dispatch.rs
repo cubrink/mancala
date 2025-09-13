@@ -1,8 +1,8 @@
 use anyhow::Result;
 use mancala_lib::{GameState, Mancala};
 use perft::PerftError;
-use perft::{PerftArgs, PerftOptions, PerftResults};
 use perft::{perft, perft_divide, perft_divide_parallel, perft_parallel};
+use perft::{PerftArgs, PerftOptions, PerftResults};
 
 pub fn start(args: &PerftArgs) -> Result<PerftResults> {
     let options = PerftOptions::try_from(args)?;
