@@ -584,7 +584,6 @@ dependencies = [
  "clap",
  "mancala-lib",
  "perft",
- "thiserror",
 ]
 
 [[package]]
