@@ -4,5 +4,6 @@ members = [
     "mancala-player",
     "perft",
     "perft-cli",
+    "search",
 ]
 resolver = "3"
