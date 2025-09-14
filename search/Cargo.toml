@@ -1,0 +1,11 @@
+[package]
+name = "search"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+mancala-lib = { version = "0.1.0", path = "../mancala-lib" }
+
+[dev-dependencies]
+criterion = "0.7.0"
+iai-callgrind = "0.16.1"
