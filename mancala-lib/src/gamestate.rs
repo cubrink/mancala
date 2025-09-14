@@ -2,6 +2,14 @@ pub const PITS: usize = 7;
 pub const ROWS: usize = 2;
 pub const N: usize = PITS * ROWS;
 
+pub trait SizedGameState<T: Sized>
+where
+    Self: GameState,
+    Self: From<T>,
+    Self: Into<T>,
+{
+}
+
 pub trait GameState
 where
     Self: From<Self::Board>,

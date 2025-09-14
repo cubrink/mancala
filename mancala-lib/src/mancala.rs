@@ -1,4 +1,5 @@
 use crate::GameState;
+use crate::SizedGameState;
 use crate::error::MancalaError;
 use crate::precomputed::get_precomputed_walk;
 
@@ -287,6 +288,41 @@ impl std::convert::From<([usize; N], bool)> for Mancala {
     }
 }
 
+impl SizedGameState<u128> for Mancala {}
+
+impl std::convert::From<u128> for Mancala {
+    fn from(value: u128) -> Self {
+        let value: [u8; 16] = value.to_le_bytes();
+        let board: <Self as GameState>::Board = std::array::from_fn(|i| value[i] as usize);
+        let player: bool = value[N] == 1;
+        Mancala { player, board }
+    }
+}
+
+impl std::convert::From<Mancala> for u128 {
+    fn from(value: Mancala) -> Self {
+        let buffer = [
+            value.board[0] as u8,
+            value.board[1] as u8,
+            value.board[2] as u8,
+            value.board[3] as u8,
+            value.board[4] as u8,
+            value.board[5] as u8,
+            value.board[6] as u8,
+            value.board[7] as u8,
+            value.board[8] as u8,
+            value.board[9] as u8,
+            value.board[10] as u8,
+            value.board[11] as u8,
+            value.board[12] as u8,
+            value.board[13] as u8,
+            value.player as u8,
+            0,
+        ];
+        u128::from_le_bytes(buffer)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -561,6 +597,13 @@ mod test {
         assert_eq!(game, ground_t);
     }
 
+    #[test]
+    fn test_u128_round_trip_ok() {
+        let game: Mancala = Mancala::from(([1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5], true));
+        let intermediate: u128 = game.into();
+        let result: Mancala = intermediate.into();
+        assert_eq!(result, game);
+    }
     // Test that
     // Happy path:
     // Capture mechanic works for both players
